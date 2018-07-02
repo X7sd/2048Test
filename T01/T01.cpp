@@ -15,10 +15,11 @@ PixelWorldEngine::DataManager data = PixelWorldEngine::DataManager(&tquiz);
 PixelWorldEngine::PixelWorld print = PixelWorldEngine::PixelWorld("Print", &tquiz);
 PixelWorldEngine::WorldMap map = PixelWorldEngine::WorldMap("Map", 5, 5);
 PixelWorldEngine::Camera cam = PixelWorldEngine::Camera(PixelWorldEngine::RectangleF(0, 0, 600, 600));
-PixelWorldEngine::Graphics::Texture2D* tilet[15];
+PixelWorldEngine::Graphics::Texture2D* tt;
 int16_t dmap[5][5];
 bool pressed; //这个变量标记是否需要更新
 int key1, key2, key3, key4; //这些变量表示上下左右键的状态
+int deathcount;//代替计时器使用,用于延时关闭程序
 
 auto IntToString(int Int) -> std::string {
 	std::string result = "";
@@ -101,14 +102,21 @@ void OnUpdate(void* sender) {
 			std::cout << dmap[i][1] << " " << dmap[i][2] << " " << dmap[i][3] << " " << dmap[i][4] << std::endl;
 		}
 		std::cout << std::endl; //调试,可以在命令窗口看到当前地图
+		int tmap[5][5]; //旋转地图
+		for (int i = 1; i <= 4; i++)
+		{
+			for (int j = 1; j <= 4; j++)
+			{
+				tmap[i][j] = dmap[j][i];
+			}
+		}
 		for (int i = 1; i <= 4; i++)
 		{
 			for (int j = 1; j <= 4; j++)
 			{
 				auto t = new PixelWorldEngine::MapData();
-				t->RenderObjectID[0] = dmap[i][j];
+				t->RenderObjectID[0] = l2(tmap[i][j])+1;
 				map.SetMapData(i, j, t);
-				delete(t);
 			}
 		}
 		pressed = false;
@@ -123,9 +131,12 @@ void OnUpdate(void* sender) {
 			if (dmap[i][j] == 2048)
 			{
 				app->SetWindow((std::string)"You Win!", 600, 600);
-				Sleep(1000);
-				app->HideWindow();
-				exit(0);
+				deathcount++;
+				if (deathcount >= 1000)
+				{
+					app->HideWindow();
+					exit(0);
+				}
 			}
 		}
 	}
@@ -169,9 +180,20 @@ void OnUpdate(void* sender) {
 	if (lost)
 	{
 		app->SetWindow((std::string)"You Lose!", 600, 600);
-		Sleep(1000);
-		app->HideWindow();
-		exit(0);
+		deathcount++;
+		if (deathcount >= 1000)
+		{
+			app->HideWindow();
+			exit(0);
+		}
+	}
+	int pmap[5][5];
+	for (int i = 1; i <= 4; i++)
+	{
+		for (int j = 1; j <= 4; j++)
+		{
+			pmap[i][j] = dmap[i][j];
+		}
 	}
 	if (PixelWorldEngine::Input::GetKeyCodeDown(PixelWorldEngine::KeyCode::Left))  //判断方向键处于何种状态(0=松开,1=刚按下,2=保持按下状态)
 	{
@@ -345,12 +367,29 @@ void OnUpdate(void* sender) {
 			}
 		}
 	}
+	bool onaji = true;
+	for (int i = 1; i <= 4; i++)
+	{
+		for (int j = 1; j <= 4; j++)
+		{
+			if (pmap[i][j] != dmap[i][j])
+			{
+				onaji = false;
+				break;
+			}
+		}
+	}
+	if (onaji)
+	{
+		pressed = false;
+	}
 }
 int main()
 {
-	for (int i = 0; i <= 11; i++)  //注册纹理
+	for (int i = 1; i <= 12; i++)  //注册纹理
 	{
-		tilet[i] = data.RegisterTexture("./tiles/" + IntToString(p2(i)) + ".png");
+		tt = data.RegisterTexture("./tiles/" + IntToString(p2(i-1)) + ".png");
+		print.RegisterRenderObjectID(i, tt);
 	}
 
 	for (int i = 1; i <= 4; i++)  //初始化
@@ -359,7 +398,7 @@ int main()
 		{
 			dmap[i][j] = 0;
 			auto t = new PixelWorldEngine::MapData();
-			t->RenderObjectID[0] = 0;
+			t->RenderObjectID[0] = 1;
 			map.SetMapData(i, j, t);
 		}
 	}
@@ -368,6 +407,7 @@ int main()
 	key2 = 0;
 	key3 = 0;
 	key4 = 0;
+	deathcount = 0;
 
 	print.SetWorldMap(&map);
 	print.SetResolution(600, 600);
@@ -380,5 +420,8 @@ int main()
 	tquiz.MakeWindow("2048", 600, 600);
 	tquiz.SetWorld(&print);
 	tquiz.ShowWindow();
+	glm::vec2 transform(150, 150);
+	print.SetWorldMap(&map);
+	cam.Move(transform);
 	tquiz.RunLoop();
 }

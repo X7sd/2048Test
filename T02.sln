@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "T01", "T01\T01.vcxproj", "{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "T02", "T02\T02.vcxproj", "{66304CE3-FF36-42AB-85E9-9160604B1B6F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PixelWorldEngine", "C:\Users\Administrator\source\repos\PixelWorldEngine2\PixelWorldEngine\PixelWorldEngine.vcxproj", "{12CCC5C9-D3FF-4315-A2C1-BB8C7AA0AEEE}"
 EndProject
@@ -15,14 +15,14 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Debug|x64.ActiveCfg = Debug|x64
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Debug|x64.Build.0 = Debug|x64
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Debug|x86.ActiveCfg = Debug|Win32
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Debug|x86.Build.0 = Debug|Win32
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Release|x64.ActiveCfg = Release|x64
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Release|x64.Build.0 = Release|x64
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Release|x86.ActiveCfg = Release|Win32
-		{374FF579-2473-4AA0-BB0E-463B0E2A8AAB}.Release|x86.Build.0 = Release|Win32
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Debug|x64.ActiveCfg = Debug|x64
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Debug|x64.Build.0 = Debug|x64
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Debug|x86.ActiveCfg = Debug|Win32
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Debug|x86.Build.0 = Debug|Win32
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Release|x64.ActiveCfg = Release|x64
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Release|x64.Build.0 = Release|x64
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Release|x86.ActiveCfg = Release|Win32
+		{66304CE3-FF36-42AB-85E9-9160604B1B6F}.Release|x86.Build.0 = Release|Win32
 		{12CCC5C9-D3FF-4315-A2C1-BB8C7AA0AEEE}.Debug|x64.ActiveCfg = Debug|x64
 		{12CCC5C9-D3FF-4315-A2C1-BB8C7AA0AEEE}.Debug|x64.Build.0 = Debug|x64
 		{12CCC5C9-D3FF-4315-A2C1-BB8C7AA0AEEE}.Debug|x86.ActiveCfg = Debug|Win32
@@ -36,6 +36,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {F9960255-A2F1-46A2-9FBF-2D875CCD9C46}
+		SolutionGuid = {B677A7B2-84D0-4320-850E-9D4F355EF7DD}
 	EndGlobalSection
 EndGlobal

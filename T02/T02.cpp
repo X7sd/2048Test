@@ -1,14 +1,23 @@
 #pragma once
 #include <Application.hpp>
 #include <DataManager.hpp>
-#include <Input.hpp>
 #include <PixelWorld.hpp>
 #include <WorldMap.hpp>
+#include <PixelObject.hpp>
+#include <Input.hpp>
+#include <Timer.hpp>
 #include <iostream>
+#include <string>
 #include <stdio.h>
 #include <random>
-
 #define random(a,b) (rand()%(b-a+1)+a)
+
+struct anime
+{
+	bool rv;
+	int x1, y1, x2, y2;
+	int type;
+};
 
 PixelWorldEngine::Application tquiz = PixelWorldEngine::Application("Test Quiz");
 PixelWorldEngine::DataManager data = PixelWorldEngine::DataManager(&tquiz);
@@ -16,10 +25,13 @@ PixelWorldEngine::PixelWorld print = PixelWorldEngine::PixelWorld("Print", &tqui
 PixelWorldEngine::WorldMap map = PixelWorldEngine::WorldMap("Map", 5, 5);
 PixelWorldEngine::Camera cam = PixelWorldEngine::Camera(PixelWorldEngine::RectangleF(0, 0, 600, 600));
 PixelWorldEngine::Graphics::Texture2D* tt;
-int16_t dmap[5][5];
-bool pressed; //这个变量标记是否需要更新
-int key1, key2, key3, key4; //这些变量表示上下左右键的状态
-int deathcount;//代替计时器使用,用于延时关闭程序
+PixelWorldEngine::PixelObject tile[20];
+anime q[20];
+int dmap[4][4];
+bool pressed, moving;
+int key1, key2, key3, key4;
+int deathcount;
+int bs=5;
 
 auto IntToString(int Int) -> std::string {
 	std::string result = "";
@@ -47,7 +59,7 @@ auto p2(int Int) -> std::int16_t //计算2^n
 auto l2(int Int) -> std::int16_t //计算log_2(n)
 {
 	std::int16_t result = 0;
-	for (int e = Int; e > 1; e/=2)
+	for (int e = Int; e > 1; e /= 2)
 	{
 		result++;
 	}
@@ -58,12 +70,120 @@ void OnKeyEvent(void* sender, PixelWorldEngine::Events::KeyClickEvent* eventArg)
 
 }
 
+void TileMove(int px, int py, int tx, int ty, int type)
+{
+	if (type > 0)
+	{
+		for (int i = 0; i < 20; i++)
+		{
+			if (!q[i].rv)
+			{
+				q[i].rv = true;
+				q[i].x1 = px;
+				q[i].y1 = py;
+				q[i].x2 = 0;
+				q[i].y2 = 0;
+				q[i].type = type;
+			}
+		}
+	}
+	else
+	{
+		if (type == -1)
+		{
+			for (int i = 0; i < 20; i++)
+			{
+				if (!q[i].rv)
+				{
+					q[i].rv = true;
+					q[i].x1 = px;
+					q[i].y1 = py;
+					q[i].x2 = tx;
+					q[i].y2 = ty;
+					q[i].type = type;
+				}
+			}
+		}
+		else
+		{
+			for (int i = 0; i < 20; i++)
+			{
+				if (!q[i].rv)
+				{
+					q[i].rv = true;
+					q[i].x1 = px;
+					q[i].y1 = py;
+					q[i].x2 = tx;
+					q[i].y2 = ty;
+					q[i].type = type;
+				}
+			}
+		}
+	}
+}
+
+void run_anime()
+{
+	for (int i = 0; i < 20; i++)
+	{
+		if (q[i].rv)
+		{
+			if (q[i].type>0)
+			{
+				if (tile[i].GetRenderObjectID() == 0)
+				{
+					tile[i].SetRenderObjectID(l2(dmap[q[i].x1][q[i].y1]) + 1);
+					tile[i].SetPosition(q[i].x1 * 150 - 75, q[i].y1 * 150 - 75);
+					tile[i].SetSize(10);
+					print.RegisterPixelObject(&tile[i]);
+				}
+				else
+				{
+					tile[i].SetSize(tile[i].GetHeight() + 10);
+					if (tile[i].GetHeight() == 150)
+					{
+						tile[i].SetRenderObjectID(0);
+						print.UnRegisterPixelObject(&tile[i]);
+						q[i].rv = false;
+					}
+				}
+			}
+			else
+			{
+				if ((q[i].type == -1) || (q[i].type==-2))
+				{
+					if (tile[i].GetRenderObjectID() == 0)
+					{
+						tile[i].SetRenderObjectID(l2(dmap[q[i].x1][q[i].y1]) + 1);
+						tile[i].SetPosition(q[i].x1 * 150 - 75, q[i].y1 * 150 - 75);
+						tile[i].SetSize(150);
+						print.RegisterPixelObject(&tile[i]);
+					}
+					else
+					{
+						tile[i].SetPosition(tile[i].GetPositionX() + bs * (q[i].x2 - q[i].x1), tile[i].GetPositionY() + bs * (q[i].y2 - q[i].y1));
+						if ((tile[i].GetPositionX() == q[i].x2 * 150 - 75) && (tile[i].GetPositionY() == q[i].y2 * 150 - 75))
+						{
+							tile[i].SetRenderObjectID(0);
+							print.UnRegisterPixelObject(&tile[i]);
+							q[i].rv = false;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 void OnUpdate(void* sender) {
 	PixelWorldEngine::Application* app = (PixelWorldEngine::Application*)sender;
-
-	app->SetWindow((std::string)"2048 Test", 600, 600);
 	int x1, y1, x2, y2, d1, d2;
 	srand((unsigned)time(NULL));
+	if (moving)
+	{
+		run_anime();
+		return;
+	}
 	if (pressed)
 	{
 		int blank = 0; //计算空位个数
@@ -77,7 +197,7 @@ void OnUpdate(void* sender) {
 				}
 			}
 		}
-		if (blank>=1)
+		if (blank >= 1)
 		{
 			do
 			{
@@ -86,6 +206,7 @@ void OnUpdate(void* sender) {
 			} while (dmap[x1][y1] != 0);
 			d1 = random(1, 8) == 1 ? 4 : 2; //我猜出4的概率大概是1/8
 			dmap[x1][y1] = d1;
+			TileMove(x1, y1, 0, 0, d1);
 			if (blank >= 2)
 			{
 				do
@@ -95,13 +216,16 @@ void OnUpdate(void* sender) {
 				} while (dmap[x2][y2] != 0);
 				d2 = random(1, 8) == 1 ? 4 : 2;
 				dmap[x2][y2] = d2;
+				TileMove(x2, y2, 0, 0, d2);
 			}
 		}
+
 		for (int i = 1; i <= 4; i++)
 		{
 			std::cout << dmap[i][1] << " " << dmap[i][2] << " " << dmap[i][3] << " " << dmap[i][4] << std::endl;
 		}
 		std::cout << std::endl; //调试,可以在命令窗口看到当前地图
+
 		int tmap[5][5]; //旋转地图
 		for (int i = 1; i <= 4; i++)
 		{
@@ -110,20 +234,24 @@ void OnUpdate(void* sender) {
 				tmap[i][j] = dmap[j][i];
 			}
 		}
-		for (int i = 1; i <= 4; i++)
+
+	    for (int i = 1; i <= 4; i++)
 		{
 			for (int j = 1; j <= 4; j++)
 			{
+				delete map.GetMapData(i, j);
 				auto t = new PixelWorldEngine::MapData();
-				t->RenderObjectID[0] = l2(tmap[i][j])+1;
+				t->RenderObjectID[0] = l2(tmap[i][j]) + 1;
 				map.SetMapData(i, j, t);
 			}
 		}
+
 		pressed = false;
 		glm::vec2 transform(0, 0);  //更新地图
 		print.SetWorldMap(&map);
 		cam.Move(transform);
 	}
+
 	for (int i = 1; i <= 4; i++)  //获胜判定
 	{
 		for (int j = 1; j <= 4; j++)
@@ -140,6 +268,7 @@ void OnUpdate(void* sender) {
 			}
 		}
 	}
+
 	bool lost = true;  //死亡判定
 	for (int i = 1; i <= 4; i++)
 	{
@@ -169,7 +298,7 @@ void OnUpdate(void* sender) {
 		{
 			for (int i = 1; i <= 3; i++)
 			{
-				if (dmap[i][j] == dmap[i+1][j])
+				if (dmap[i][j] == dmap[i + 1][j])
 				{
 					lost = false;
 					break;
@@ -187,6 +316,7 @@ void OnUpdate(void* sender) {
 			exit(0);
 		}
 	}
+
 	int pmap[5][5];
 	for (int i = 1; i <= 4; i++)
 	{
@@ -195,6 +325,9 @@ void OnUpdate(void* sender) {
 			pmap[i][j] = dmap[i][j];
 		}
 	}
+
+	int px = 0, py = 0, tx = 0, ty = 0,type=0;
+
 	if (PixelWorldEngine::Input::GetKeyCodeDown(PixelWorldEngine::KeyCode::Left))  //判断方向键处于何种状态(0=松开,1=刚按下,2=保持按下状态)
 	{
 		if (key1 < 2)
@@ -206,7 +339,7 @@ void OnUpdate(void* sender) {
 	{
 		key1 = 0;
 	}
-	if (key1==1)
+	if (key1 == 1)
 	{
 		pressed = true;
 		for (int i = 1; i <= 4; i++)
@@ -220,24 +353,61 @@ void OnUpdate(void* sender) {
 					{
 						k++;
 					}
+					if (dmap[i][k] != 0)
+					{
+						px = i;
+						py = k;
+						tx = i;
+						ty = j;
+						type = -1;
+					}
 					dmap[i][j] = dmap[i][k];
 					dmap[i][k] = 0;
 				}
 				if (dmap[i][j - 1] == dmap[i][j])
 				{
+
 					dmap[i][j - 1] *= 2;
 					dmap[i][j] = 0;
+					if (dmap[i][j - 1] != 0)
+					{
+						if ((px == 0) && (py == 0))
+						{
+							px = i;
+							py = j;
+						}
+						tx = i;
+						ty = j - 1;
+						type = -2;
+						TileMove(px, py, tx, ty, type);
+						moving = true;
+						type = 0;
+					}
 					int k = j;
 					while ((dmap[i][k] == 0) && (k < 4))
 					{
 						k++;
 					}
+					if (dmap[i][k] != 0)
+					{
+						px = i;
+						py = k;
+						tx = i;
+						ty = j;
+						type = -1;
+					}
 					dmap[i][j] = dmap[i][k];
 					dmap[i][k] = 0;
+				}
+				if (type != 0)
+				{
+					TileMove(px, py, tx, ty, type);
+					moving = true;
 				}
 			}
 		}
 	}
+
 	if (PixelWorldEngine::Input::GetKeyCodeDown(PixelWorldEngine::KeyCode::Right))
 	{
 		if (key2 < 2)
@@ -249,7 +419,7 @@ void OnUpdate(void* sender) {
 	{
 		key2 = 0;
 	}
-	if (key2==1)
+	if (key2 == 1)
 	{
 		pressed = true;
 		for (int i = 1; i <= 4; i++)
@@ -263,6 +433,13 @@ void OnUpdate(void* sender) {
 					{
 						k--;
 					}
+					if (dmap[i][k] != 0)
+					{
+						px = i;
+						py = k;
+						tx = i;
+						ty = j;
+					}
 					dmap[i][j] = dmap[i][k];
 					dmap[i][k] = 0;
 				}
@@ -270,6 +447,13 @@ void OnUpdate(void* sender) {
 				{
 					dmap[i][j + 1] *= 2;
 					dmap[i][j] = 0;
+					if ((px == 0) && (py == 0))
+					{
+						px = i;
+						py = j;
+					}
+					tx = i;
+					ty = j + 1;
 					int k = j;
 					while ((dmap[i][k] == 0) && (k > 1))
 					{
@@ -281,6 +465,7 @@ void OnUpdate(void* sender) {
 			}
 		}
 	}
+
 	if (PixelWorldEngine::Input::GetKeyCodeDown(PixelWorldEngine::KeyCode::Down))
 	{
 		if (key3 < 2)
@@ -292,7 +477,7 @@ void OnUpdate(void* sender) {
 	{
 		key3 = 0;
 	}
-	if (key3==1)
+	if (key3 == 1)
 	{
 		pressed = true;
 		for (int j = 1; j <= 4; j++)
@@ -306,6 +491,13 @@ void OnUpdate(void* sender) {
 					{
 						k--;
 					}
+					if (dmap[k][j] != 0)
+					{
+						px = k;
+						py = j;
+						tx = i;
+						ty = j;
+					}
 					dmap[i][j] = dmap[k][j];
 					dmap[k][j] = 0;
 				}
@@ -313,6 +505,13 @@ void OnUpdate(void* sender) {
 				{
 					dmap[i + 1][j] *= 2;
 					dmap[i][j] = 0;
+					if ((px == 0) && (py == 0))
+					{
+						px = i;
+						py = j;
+					}
+					tx = i + 1;
+					ty = j;
 					int k = i;
 					while ((dmap[k][j] == 0) && (k > 1))
 					{
@@ -324,6 +523,7 @@ void OnUpdate(void* sender) {
 			}
 		}
 	}
+
 	if (PixelWorldEngine::Input::GetKeyCodeDown(PixelWorldEngine::KeyCode::Up))
 	{
 		if (key4 < 2)
@@ -335,7 +535,7 @@ void OnUpdate(void* sender) {
 	{
 		key4 = 0;
 	}
-	if (key4==1)
+	if (key4 == 1)
 	{
 		pressed = true;
 		for (int j = 1; j <= 4; j++)
@@ -349,6 +549,13 @@ void OnUpdate(void* sender) {
 					{
 						k++;
 					}
+					if (dmap[k][j] != 0)
+					{
+						px = k;
+						py = j;
+						tx = i;
+						ty = j;
+					}
 					dmap[i][j] = dmap[k][j];
 					dmap[k][j] = 0;
 				}
@@ -356,6 +563,13 @@ void OnUpdate(void* sender) {
 				{
 					dmap[i - 1][j] *= 2;
 					dmap[i][j] = 0;
+					if ((px == 0) && (py == 0))
+					{
+						px = i;
+						py = j;
+					}
+					tx = i - 1;
+					ty = j;
 					int k = i;
 					while ((dmap[k][j] == 0) && (k < 4))
 					{
@@ -367,6 +581,7 @@ void OnUpdate(void* sender) {
 			}
 		}
 	}
+
 	bool onaji = true;
 	for (int i = 1; i <= 4; i++)
 	{
@@ -382,14 +597,20 @@ void OnUpdate(void* sender) {
 	if (onaji)
 	{
 		pressed = false;
+		moving = false;
 	}
 }
 int main()
 {
 	for (int i = 1; i <= 12; i++)  //注册纹理
 	{
-		tt = data.RegisterTexture("./tiles/" + IntToString(p2(i-1)) + ".png");
+		tt = data.RegisterTexture("./tiles/" + IntToString(p2(i - 1)) + ".png");
 		print.RegisterRenderObjectID(i, tt);
+	}
+	
+	for (int i = 0; i < 20; i++)
+	{
+		tile[i] = PixelWorldEngine::PixelObject("Tile", 0, 0, 0, 0);
 	}
 
 	for (int i = 1; i <= 4; i++)  //初始化
@@ -403,6 +624,7 @@ int main()
 		}
 	}
 	pressed = true;
+	moving = false;
 	key1 = 0;
 	key2 = 0;
 	key3 = 0;
@@ -412,7 +634,7 @@ int main()
 	print.SetWorldMap(&map);
 	print.SetResolution(600, 600);
 	print.SetCamera(&cam);
-	print.SetRenderObjectSize(150);
+	map.SetMapBlockSize(150);
 
 	tquiz.KeyClick.push_back(OnKeyEvent);
 	tquiz.Update.push_back(OnUpdate);
@@ -420,7 +642,7 @@ int main()
 	tquiz.MakeWindow("2048", 600, 600);
 	tquiz.SetWorld(&print);
 	tquiz.ShowWindow();
-	glm::vec2 transform(150, 150);
+	glm::vec2 transform(150,150);
 	print.SetWorldMap(&map);
 	cam.Move(transform);
 	tquiz.RunLoop();

@@ -25,13 +25,14 @@ PixelWorldEngine::PixelWorld print = PixelWorldEngine::PixelWorld("Print", &tqui
 PixelWorldEngine::WorldMap map = PixelWorldEngine::WorldMap("Map", 5, 5);
 PixelWorldEngine::Camera cam = PixelWorldEngine::Camera(PixelWorldEngine::RectangleF(0, 0, 600, 600));
 PixelWorldEngine::Graphics::Texture2D* tt;
-PixelWorldEngine::PixelObject tile[20];
+PixelWorldEngine::PixelObject* tile[20];
 anime q[20];
-int dmap[4][4];
+int dmap[5][5];
 bool pressed, moving;
 int key1, key2, key3, key4;
 int deathcount;
-int bs=5;
+float dtime;
+float bs = 600;
 
 auto IntToString(int Int) -> std::string {
 	std::string result = "";
@@ -115,7 +116,7 @@ void TileMove(int px, int py, int tx, int ty, int type)
 					q[i].y1 = py;
 					q[i].x2 = tx;
 					q[i].y2 = ty;
-					q[i].type = type;
+					q[i].type = -2;
 				}
 			}
 		}
@@ -124,48 +125,52 @@ void TileMove(int px, int py, int tx, int ty, int type)
 
 void run_anime()
 {
+	float speed = bs * dtime;
+	moving = false;
 	for (int i = 0; i < 20; i++)
 	{
 		if (q[i].rv)
 		{
-			if (q[i].type>0)
+			moving = true;
+			if (q[i].type > 0)
 			{
-				if (tile[i].GetRenderObjectID() == 0)
+				if (tile[i]->GetRenderObjectID() == 0)
 				{
-					tile[i].SetRenderObjectID(l2(dmap[q[i].x1][q[i].y1]) + 1);
-					tile[i].SetPosition(q[i].x1 * 150 - 75, q[i].y1 * 150 - 75);
-					tile[i].SetSize(10);
-					print.RegisterPixelObject(&tile[i]);
+					tile[i]->SetRenderObjectID(l2(q[i].type) + 1);
+					tile[i]->SetPosition(q[i].y1 * 150 + 75, q[i].x1 * 150 + 75);
+					tile[i]->SetSize(speed);
+					print.RegisterPixelObject(tile[i]);
 				}
 				else
 				{
-					tile[i].SetSize(tile[i].GetHeight() + 10);
-					if (tile[i].GetHeight() == 150)
+					tile[i]->SetSize(tile[i]->GetHeight() + speed);
+					if (tile[i]->GetHeight() >= 150)
 					{
-						tile[i].SetRenderObjectID(0);
-						print.UnRegisterPixelObject(&tile[i]);
+						tile[i]->SetRenderObjectID(0);
+						print.UnRegisterPixelObject(tile[i]);
 						q[i].rv = false;
 					}
 				}
 			}
 			else
 			{
-				if ((q[i].type == -1) || (q[i].type==-2))
+				if ((q[i].type == -1) || (q[i].type == -2))
 				{
-					if (tile[i].GetRenderObjectID() == 0)
+					if (tile[i]->GetRenderObjectID() == 0)
 					{
-						tile[i].SetRenderObjectID(l2(dmap[q[i].x1][q[i].y1]) + 1);
-						tile[i].SetPosition(q[i].x1 * 150 - 75, q[i].y1 * 150 - 75);
-						tile[i].SetSize(150);
-						print.RegisterPixelObject(&tile[i]);
+						tile[i]->SetRenderObjectID(l2(dmap[q[i].x1][q[i].y1]) + 1);
+						tile[i]->SetPosition(q[i].y1 * 150 + 75, q[i].x1 * 150 + 75);
+						tile[i]->SetSize(150);
+						print.RegisterPixelObject(tile[i]);
 					}
 					else
 					{
-						tile[i].SetPosition(tile[i].GetPositionX() + bs * (q[i].x2 - q[i].x1), tile[i].GetPositionY() + bs * (q[i].y2 - q[i].y1));
-						if ((tile[i].GetPositionX() == q[i].x2 * 150 - 75) && (tile[i].GetPositionY() == q[i].y2 * 150 - 75))
+						//  tile[i]->SetPosition(tile[i]->GetPositionY() + speed * (q[i].y2 - q[i].y1), tile[i]->GetPositionX() + speed * (q[i].x2 - q[i].x1));
+						tile[i]->Move(speed * (q[i].y2 - q[i].y1), speed * (q[i].x2 - q[i].x1));
+						if ((tile[i]->GetPositionX() == q[i].y2 * 150 + 75) && (tile[i]->GetPositionY() == q[i].x2 * 150 + 75))
 						{
-							tile[i].SetRenderObjectID(0);
-							print.UnRegisterPixelObject(&tile[i]);
+							tile[i]->SetRenderObjectID(0);
+							print.UnRegisterPixelObject(tile[i]);
 							q[i].rv = false;
 						}
 					}
@@ -177,6 +182,7 @@ void run_anime()
 
 void OnUpdate(void* sender) {
 	PixelWorldEngine::Application* app = (PixelWorldEngine::Application*)sender;
+	dtime = app->GetDeltaTime();
 	int x1, y1, x2, y2, d1, d2;
 	srand((unsigned)time(NULL));
 	if (moving)
@@ -218,6 +224,8 @@ void OnUpdate(void* sender) {
 				dmap[x2][y2] = d2;
 				TileMove(x2, y2, 0, 0, d2);
 			}
+			pressed = false;
+			moving = true;
 		}
 
 		for (int i = 1; i <= 4; i++)
@@ -225,6 +233,11 @@ void OnUpdate(void* sender) {
 			std::cout << dmap[i][1] << " " << dmap[i][2] << " " << dmap[i][3] << " " << dmap[i][4] << std::endl;
 		}
 		std::cout << std::endl; //调试,可以在命令窗口看到当前地图
+
+	/**	if (moving)
+		{
+			return;
+		} */
 
 		int tmap[5][5]; //旋转地图
 		for (int i = 1; i <= 4; i++)
@@ -235,7 +248,7 @@ void OnUpdate(void* sender) {
 			}
 		}
 
-	    for (int i = 1; i <= 4; i++)
+		for (int i = 1; i <= 4; i++)
 		{
 			for (int j = 1; j <= 4; j++)
 			{
@@ -326,7 +339,7 @@ void OnUpdate(void* sender) {
 		}
 	}
 
-	int px = 0, py = 0, tx = 0, ty = 0,type=0;
+	int px = 0, py = 0, tx = 0, ty = 0, type = 0;
 
 	if (PixelWorldEngine::Input::GetKeyCodeDown(PixelWorldEngine::KeyCode::Left))  //判断方向键处于何种状态(0=松开,1=刚按下,2=保持按下状态)
 	{
@@ -607,10 +620,10 @@ int main()
 		tt = data.RegisterTexture("./tiles/" + IntToString(p2(i - 1)) + ".png");
 		print.RegisterRenderObjectID(i, tt);
 	}
-	
+
 	for (int i = 0; i < 20; i++)
 	{
-		tile[i] = PixelWorldEngine::PixelObject("Tile", 0, 0, 0, 0);
+		tile[i] = new PixelWorldEngine::PixelObject("Tile", 0, 0, 0, 0);
 	}
 
 	for (int i = 1; i <= 4; i++)  //初始化
@@ -642,7 +655,7 @@ int main()
 	tquiz.MakeWindow("2048", 600, 600);
 	tquiz.SetWorld(&print);
 	tquiz.ShowWindow();
-	glm::vec2 transform(150,150);
+	glm::vec2 transform(150, 150);
 	print.SetWorldMap(&map);
 	cam.Move(transform);
 	tquiz.RunLoop();
